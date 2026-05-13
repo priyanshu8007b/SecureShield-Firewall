@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Virtual environment
+venv/
+.venv/
+env/
+
+# Logs (keep folder, ignore contents)
+logs/*
+!logs/.gitkeep
+
+# Models (keep folder, ignore artifacts)
+models/*.pkl
+models/*.h5
+models/*.joblib
+!models/.gitkeep
+
+# Data caches
+data/*
+!data/.gitkeep
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local

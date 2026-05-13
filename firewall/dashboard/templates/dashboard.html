@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SecureShield Firewall</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #0d1117; color: #c9d1d9; padding: 24px;
+  }
+  h1 { color: #58a6ff; margin-bottom: 24px; font-size: 24px; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px; margin-bottom: 24px;
+  }
+  .card {
+    background: #161b22; border: 1px solid #30363d;
+    border-radius: 8px; padding: 20px;
+  }
+  .card h3 { font-size: 12px; color: #8b949e; text-transform: uppercase; letter-spacing: 0.5px; }
+  .card .value { font-size: 32px; font-weight: 700; margin-top: 8px; }
+  .blocked { color: #f85149; }
+  .allowed { color: #3fb950; }
+  .total { color: #58a6ff; }
+  .panel {
+    background: #161b22; border: 1px solid #30363d;
+    border-radius: 8px; padding: 20px; margin-bottom: 16px;
+  }
+  .panel h2 { font-size: 16px; margin-bottom: 16px; color: #c9d1d9; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid #30363d; }
+  th { color: #8b949e; font-weight: 500; text-transform: uppercase; font-size: 11px; }
+  td code {
+    background: #0d1117; padding: 2px 6px; border-radius: 4px;
+    font-size: 12px; color: #d2a8ff;
+  }
+  .tag {
+    display: inline-block; padding: 3px 10px; border-radius: 12px;
+    font-size: 11px; font-weight: 600;
+  }
+  .tag-block { background: #f8514920; color: #f85149; }
+  .tag-allow { background: #3fb95020; color: #3fb950; }
+  textarea {
+    width: 100%; background: #0d1117; color: #c9d1d9;
+    border: 1px solid #30363d; border-radius: 6px;
+    padding: 12px; font-family: 'Courier New', monospace; font-size: 13px;
+    min-height: 80px; resize: vertical;
+  }
+  textarea:focus { outline: none; border-color: #58a6ff; }
+  button {
+    background: #238636; color: white; border: 0;
+    padding: 10px 20px; border-radius: 6px; cursor: pointer;
+    font-weight: 600; margin-top: 10px; font-size: 14px;
+  }
+  button:hover { background: #2ea043; }
+  #result {
+    margin-top: 12px; padding: 12px; border-radius: 6px;
+    font-family: monospace; font-size: 13px; display: none;
+  }
+  .result-block { background: #f8514920; border: 1px solid #f85149; color: #ffa198; }
+  .result-allow { background: #3fb95020; border: 1px solid #3fb950; color: #7ee787; }
+  .examples {
+    margin-top: 8px; font-size: 12px; color: #8b949e;
+  }
+  .examples code {
+    background: #0d1117; padding: 2px 6px; border-radius: 3px;
+    cursor: pointer; color: #79c0ff;
+  }
+  .examples code:hover { background: #1f2937; }
+</style>
+</head>
+<body>
+  <h1>🛡️ SecureShield Firewall</h1>
+
+  <div class="grid">
+    <div class="card"><h3>Total Requests</h3><div class="value total" id="s-total">0</div></div>
+    <div class="card"><h3>Blocked</h3><div class="value blocked" id="s-blocked">0</div></div>
+    <div class="card"><h3>Allowed</h3><div class="value allowed" id="s-allowed">0</div></div>
+    <div class="card"><h3>Block Rate</h3><div class="value" id="s-rate">0%</div></div>
+    <div class="card"><h3>ML Engine</h3><div class="value" id="s-ml">—</div></div>
+  </div>
+
+  <div class="panel">
+    <h2>🔬 Manual Payload Tester</h2>
+    <textarea id="payload" placeholder="Enter a payload to inspect..."></textarea>
+    <button onclick="testPayload()">Inspect Payload</button>
+    <div id="result"></div>
+    <div class="examples">
+      Try:
+      <code onclick="setPayload(this)">' OR 1=1 --</code>
+      <code onclick="setPayload(this)">&lt;script&gt;alert(1)&lt;/script&gt;</code>
+      <code onclick="setPayload(this)">UNION/**/SELECT password FROM users</code>
+      <code onclick="setPayload(this)">hello world</code>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>📋 Recent Decisions</h2>
+    <table>
+      <thead>
+        <tr><th>Decision</th><th>Layer</th><th>IP</th><th>Reason</th><th>Payload</th></tr>
+      </thead>
+      <tbody id="recent"></tbody>
+    </table>
+  </div>
+
+<script>
+async function refresh() {
+  try {
+    const r = await fetch("/api/stats");
+    const d = await r.json();
+    document.getElementById("s-total").textContent = d.total;
+    document.getElementById("s-blocked").textContent = d.blocked;
+    document.getElementById("s-allowed").textContent = d.allowed;
+    document.getElementById("s-rate").textContent = d.block_rate + "%";
+    document.getElementById("s-ml").textContent = d.ml_ready ? "READY" : "OFF";
+    document.getElementById("s-ml").style.color = d.ml_ready ? "#3fb950" : "#8b949e";
+
+    const tbody = document.getElementById("recent");
+    if (d.recent.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#8b949e;padding:20px">No requests yet. Try the payload tester above.</td></tr>';
+    } else {
+      tbody.innerHTML = d.recent.map(r => `
+        <tr>
+          <td><span class="tag tag-${r.decision === 'BLOCK' ? 'block' : 'allow'}">${r.decision}</span></td>
+          <td>${r.layer}</td>
+          <td>${r.ip}</td>
+          <td>${escapeHtml(r.reason)}</td>
+          <td><code>${escapeHtml(r.payload)}</code></td>
+        </tr>
+      `).join("");
+    }
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+async function testPayload() {
+  const payload = document.getElementById("payload").value;
+  if (!payload) return;
+  const r = await fetch("/api/check", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({payload})
+  });
+  const d = await r.json();
+  const el = document.getElementById("result");
+  el.style.display = "block";
+  el.className = d.allowed ? "result-allow" : "result-block";
+  el.textContent = (d.allowed ? "✓ ALLOWED: " : "✗ BLOCKED: ") + d.reason;
+  refresh();
+}
+
+function setPayload(el) {
+  document.getElementById("payload").value = el.textContent;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+
+setInterval(refresh, 2000);
+refresh();
+</script>
+</body>
+</html>
