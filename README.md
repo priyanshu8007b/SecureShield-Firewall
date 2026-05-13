@@ -9,6 +9,7 @@ Markdown
 
 A **hybrid web application firewall** that blocks SQL Injection and XSS attacks using rule-based filtering combined with machine learning. Designed to be **evasion-resistant** against common bypass techniques.
 
+![SecureShield Dashboard](screenshots/dashboard.png)
 ---
 
 ## ✨ Features
