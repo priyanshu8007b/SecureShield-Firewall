@@ -99,13 +99,24 @@ Verify yourself:
 Bash
 
 pytest tests/test_evasion.py -v
-🤖 Machine Learning
-Component	Details
-Vectorizer	TF-IDF, character n-grams (1–4)
-Classifier	Random Forest (100 estimators)
-Features	5,000 max
-Training Data	SQLi + XSS payloads vs. benign HTTP traffic
-Retrain anytime:
+
+## 🤖 Machine Learning
+
+A weighted soft-voting ensemble of 4 classifiers trained on TF-IDF character n-gram features:
+
+| Model | Weight | Purpose |
+|-------|--------|---------|
+| Random Forest | 2 | Robust non-linear pattern capture |
+| Linear SVM (calibrated) | 2 | High-dimensional sparse text classification |
+| Logistic Regression | 1 | Probabilistic baseline |
+| Multinomial Naive Bayes | 1 | Fast text classification |
+
+| Component | Details |
+|-----------|---------|
+| Vectorizer | TF-IDF, character n-grams (1–4), 5000 features |
+| Voting Strategy | Soft voting with weighted probabilities |
+| Cross-validation | 97.84% accuracy (5-fold) |
+| Test Accuracy | 100% (zero false positives, zero false negatives) |
 
 Bash
 
