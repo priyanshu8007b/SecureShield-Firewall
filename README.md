@@ -116,7 +116,8 @@ A weighted soft-voting ensemble of 4 classifiers trained on TF-IDF character n-g
 | Vectorizer | TF-IDF, character n-grams (1–4), 5000 features |
 | Voting Strategy | Soft voting with weighted probabilities |
 | Cross-validation | 97.84% accuracy (5-fold) |
-| Test Accuracy | 100% (zero false positives, zero false negatives) |
+| Internal test set | 100% (small sample, prone to overfitting) |should i add this to readme?
+
 
 Bash
 
