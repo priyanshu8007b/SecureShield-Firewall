@@ -18,7 +18,7 @@ A **hybrid web application firewall** that blocks SQL Injection and XSS attacks 
 - 🛡️ **Evasion-Resistant** — multi-pass decoding defeats URL/HTML/Unicode encoding bypasses
 - ⚡ **Rate Limiting** — per-IP throttling with automatic blocking
 - 📊 **Live Dashboard** — real-time stats, recent decisions, manual payload tester
-- 📝 **Structured Logging** — JSON event logs for SIEM integration
+- 📝 **Structured Logging** — newline-delimited JSON event logs (SIEM-ready format)
 - ✅ **Tested** — comprehensive evasion bypass test suite
 
 ---
